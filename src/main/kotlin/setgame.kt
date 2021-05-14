@@ -32,19 +32,19 @@ class SetGame {
     }
 
     fun play() {
-//        printFaceUpCards()
-        while (faceUpCards.size >= NUMBER_OF_FACE_UP_CARDS) {
-            val set = searchSetInFaceUpCards()
-            if (set != null) {
-                println(collectionOfCardsToString(set))
-                faceUpCards.removeAll(set)
-            }
-            if (deck.size >= SET_SIZE) {
-                drawFromDeck(SET_SIZE)
-            } else {
-                break
-            }
-        }
+        printFaceUpCards()
+//        while (faceUpCards.size >= NUMBER_OF_FACE_UP_CARDS) {
+//            val set = searchSetInFaceUpCards()
+//            if (set != null) {
+//                println(collectionOfCardsToString(set))
+//                faceUpCards.removeAll(set)
+//            }
+//            if (deck.size >= SET_SIZE) {
+//                drawFromDeck(SET_SIZE)
+//            } else {
+//                break
+//            }
+//        }
     }
 
     private fun drawFromDeck(amountToDraw: Int) {
@@ -113,7 +113,7 @@ class SetGame {
         val l = faceUpCards.toList()
         for (i in 0..l.size step SET_SIZE) {
             println(collectionOfCardsToString(l.subList(i, kotlin.math.min(i + SET_SIZE, l.size))))
-            println()
+//            println("(A B C)")
         }
     }
 

@@ -7,6 +7,8 @@ const val ANSI_RED = "\u001B[31m"
 const val ANSI_GREEN = "\u001B[32m"
 const val ANSI_PURPLE = "\u001B[35m"
 
+const val CARD_STRING_LINE_LENGTH = 17 + 5 + 5 // 17 max raw length + 5 on each side
+
 data class SetCard(
     val shape: Shape,
     val color: Color,
@@ -19,40 +21,39 @@ data class SetCard(
             Shape.Diamond -> generateDiamondString()
             Shape.Oval -> generateOvalString()
         }
-        return concatMultiLineStrings(
+        val rawCardAsString = concatMultiLineStrings(
             List(parseNumber(setNumber)) { singleShapeString },
             " "
         )
+        val paddedCardAsString = padMultilineString(rawCardAsString, CARD_STRING_LINE_LENGTH)
+        return applyColorToMultilineString(paddedCardAsString, getAnsiColor())
     }
 
     private fun generateSquiggleString(): String {
         val s = getShadingChar()
-        val c = getAnsiColor()
         return """
-        #$c\$s$s$s\
-        #$c/$s$s$s/
-        #$c\$s$s$s\
-        #$c/$s$s$s/""".trimMargin("#")
+        #\$s$s$s\
+        #/$s$s$s/
+        #\$s$s$s\
+        #/$s$s$s/""".trimMargin("#")
     }
 
     private fun generateDiamondString(): String {
         val s = getShadingChar()
-        val c = getAnsiColor()
         return """
-        #$c /$s\ 
-        #$c/$s$s$s\
-        #$c\$s$s$s/
-        #$c \$s/ """.trimMargin("#")
+        # /$s\ 
+        #/$s$s$s\
+        #\$s$s$s/
+        # \$s/ """.trimMargin("#")
     }
 
     private fun generateOvalString(): String {
         val s = getShadingChar()
-        val c = getAnsiColor()
         return """
-        #$c *** 
-        #$c|$s$s$s|
-        #$c|$s$s$s|
-        #$c *** """.trimMargin("#")
+        # *** 
+        #|$s$s$s|
+        #|$s$s$s|
+        # *** """.trimMargin("#")
     }
 
     private fun getShadingChar(): Char = when (shading) {
@@ -77,7 +78,7 @@ fun parseNumber(setNumber: SetNumber): Int = when (setNumber) {
 fun collectionOfCardsToString(c: Collection<SetCard>): String {
     return concatMultiLineStrings(
         c.map { it.toString() },
-        "           "
+        " ".repeat(2)
     )
 }
 
@@ -96,5 +97,34 @@ fun concatMultiLineStrings(strings: List<String>, d: String): String {
             builder.appendLine(lineBuilder.toString())
         }
     }
-    return Regex("\n\$").replace(builder.toString(), "") // remove new line ('\n') from final multilineString
+    return builder.toString().removeNewLineSuffix()
+}
+
+fun padMultilineString(s: String, desiredLineSize: Int): String {
+    val builder = StringBuilder()
+    val lines = s.lines()
+
+    for (line in lines) {
+        val lineBuilder = StringBuilder()
+        val pad = " ".repeat(kotlin.math.max(((desiredLineSize - line.length) / 2), 0))
+        lineBuilder.append(pad)
+        lineBuilder.append(line)
+        lineBuilder.append(pad)
+        builder.appendLine(lineBuilder.toString())
+    }
+    return builder.toString().removeNewLineSuffix()
+}
+
+fun String.removeNewLineSuffix(): String {
+    return Regex("\n\$").replace(this, "") // remove new line ('\n') from final multilineString
+}
+
+fun applyColorToMultilineString(s: String, color: String): String {
+    val builder = StringBuilder()
+    val lines = s.lines()
+
+    for (line in lines) {
+        builder.appendLine(color + line + ANSI_RESET)
+    }
+    return builder.toString().removeNewLineSuffix()
 }
