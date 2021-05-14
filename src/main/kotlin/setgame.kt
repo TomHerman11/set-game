@@ -2,6 +2,7 @@ package setgame
 
 const val NUMBER_OF_FACE_UP_CARDS = 12
 const val SET_SIZE = 3
+const val MAX_FACE_UP_CARDS = 18
 
 enum class Shape { Oval, Squiggle, Diamond }
 enum class Color { Red, Purple, Green }
@@ -28,28 +29,58 @@ class SetGame {
     private var faceUpCards: MutableSet<SetCard> = mutableSetOf()
 
     init {
-        drawFromDeck(NUMBER_OF_FACE_UP_CARDS)
+        initializeFaceUpCards()
     }
 
     fun play() {
-        printFaceUpCards()
-//        while (faceUpCards.size >= NUMBER_OF_FACE_UP_CARDS) {
-//            val set = searchSetInFaceUpCards()
-//            if (set != null) {
-//                println(collectionOfCardsToString(set))
-//                faceUpCards.removeAll(set)
-//            }
+        printWelcomeMessage()
+        while (faceUpCards.size >= NUMBER_OF_FACE_UP_CARDS) {
+            printFaceUpCards()
+            printInstructions()
+            when (readLine()!!.toLowerCase()) {
+                "draw" -> {
+                    drawFromDeck()
+                }
+                "help" -> {
+                    val set = searchSetInFaceUpCards()
+                    if (set != null) {
+                        println(collectionOfCardsToString(set))
+                        faceUpCards.removeAll(set)
+                        drawFromDeck()
+                    } else {
+                        println("Could not find a Set! Type \"draw\" or restart the game.")
+                    }
+                }
+                else -> {
+                    // should print indices of cards in face up cards as numbers
+                    // parse and trim white spaces from user input
+                    // check the input is valid
+                    // check the input is a valid set or not and print a message accordingly.
+                }
+            }
+
+
 //            if (deck.size >= SET_SIZE) {
 //                drawFromDeck(SET_SIZE)
 //            } else {
 //                break
 //            }
-//        }
+        }
     }
 
-    private fun drawFromDeck(amountToDraw: Int) {
-        repeat(amountToDraw) {
+    private fun initializeFaceUpCards() {
+        repeat(NUMBER_OF_FACE_UP_CARDS) {
             faceUpCards.add(deck.removeLast())
+        }
+    }
+
+    private fun drawFromDeck() {
+        if (faceUpCards.size < MAX_FACE_UP_CARDS) {
+            repeat(SET_SIZE) {
+                faceUpCards.add(deck.removeLast())
+            }
+        } else {
+            println("Max number of face up cards reached: $MAX_FACE_UP_CARDS")
         }
     }
 
@@ -109,12 +140,27 @@ class SetGame {
         }
     }
 
-    fun printFaceUpCards() {
+    private fun printFaceUpCards() {
         val l = faceUpCards.toList()
         for (i in 0..l.size step SET_SIZE) {
             println(collectionOfCardsToString(l.subList(i, kotlin.math.min(i + SET_SIZE, l.size))))
 //            println("(A B C)")
         }
+    }
+
+    private fun printWelcomeMessage() {
+        println("Play Set! See instructions at: https://en.wikipedia.org/wiki/Set_(card_game)")
+    }
+
+    private fun printInstructions() {
+        println(
+            """
+            - To select a Set, insert the 3 characters matching your cards.
+            - To draw 3 more cards, type "draw".
+            - Want the computer to find a set? Type "help".
+            Your input:
+            """.trimIndent()
+        )
     }
 
     fun isLegalSet(cards: List<SetCard>): Boolean {
