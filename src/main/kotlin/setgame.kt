@@ -167,13 +167,16 @@ class SetGame {
     }
 
     private fun printFaceUpCards() {
+        val extraPaddingBetweenCards = " ".repeat(PADDING_LENGTH_BETWEEN_CARDS)
+        val leftPadding = " ".repeat(CARD_STRING_LINE_LENGTH / 2)
+
         println("Board:")
         for (i in 0 until faceUpCards.size step SET_SIZE) {
             println(collectionOfCardsToString(faceUpCards.subList(i, i + SET_SIZE)))
             for (j in i until i + SET_SIZE) {
-                val padding = " ".repeat((CARD_STRING_LINE_LENGTH + j.toString().length) / 2)
-                val extraPaddingBetweenCards = " ".repeat(3)
-                print("$padding${j + 1}$padding$extraPaddingBetweenCards")
+                val index = j + 1
+                val rightPadding = " ".repeat(leftPadding.length - index.toString().length + 1)
+                print("$leftPadding$index$rightPadding$extraPaddingBetweenCards")
             }
             println()
         }

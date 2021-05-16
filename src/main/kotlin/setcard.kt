@@ -8,6 +8,7 @@ const val ANSI_GREEN = "\u001B[32m"
 const val ANSI_PURPLE = "\u001B[35m"
 
 const val CARD_STRING_LINE_LENGTH = 17 + 5 + 5 // 17 max raw length + 5 on each side
+const val PADDING_LENGTH_BETWEEN_CARDS = 2
 
 data class SetCard(
     val shape: Shape,
@@ -88,7 +89,7 @@ fun parseNumber(setNumber: SetNumber): Int = when (setNumber) {
 fun collectionOfCardsToString(c: Collection<SetCard>): String {
     return concatMultiLineStrings(
         c.map { it.toString() },
-        " ".repeat(2)
+        " ".repeat(PADDING_LENGTH_BETWEEN_CARDS)
     )
 }
 
@@ -98,11 +99,13 @@ fun concatMultiLineStrings(strings: List<String>, d: String): String {
     val minLines = linesMatrix.minByOrNull { it.size }
 
     if (minLines != null) {
-        for (i in minLines.indices) {
+        for (j in minLines.indices) { // start with first line in each string, then second, third, ...
             val lineBuilder = StringBuilder()
-            for (lines in linesMatrix) {
-                lineBuilder.append(lines[i])
-                lineBuilder.append(d)
+            for (i in linesMatrix.indices) { // visit each "original" string when building a line
+                lineBuilder.append(linesMatrix[i][j])
+                if (i < linesMatrix.size - 1) {
+                    lineBuilder.append(d)
+                }
             }
             builder.appendLine(lineBuilder.toString())
         }
@@ -116,7 +119,7 @@ fun padMultilineString(s: String, desiredLineSize: Int): String {
 
     for (line in lines) {
         val lineBuilder = StringBuilder()
-        val pad = " ".repeat(kotlin.math.max(((desiredLineSize - line.length) / 2), 0))
+        val pad = " ".repeat(kotlin.math.max((desiredLineSize - line.length) / 2, 0))
         lineBuilder.append(pad)
         lineBuilder.append(line)
         lineBuilder.append(pad)
