@@ -15,7 +15,13 @@ data class SetCard(
     val setNumber: SetNumber,
     val shading: Shading
 ) {
-    override fun toString(): String {
+    private val cardAsString: String
+
+    init {
+        cardAsString = generateCardAsString()
+    }
+
+    private fun generateCardAsString(): String {
         val singleShapeString = when (shape) {
             Shape.Squiggle -> generateSquiggleString()
             Shape.Diamond -> generateDiamondString()
@@ -27,6 +33,10 @@ data class SetCard(
         )
         val paddedCardAsString = padMultilineString(rawCardAsString, CARD_STRING_LINE_LENGTH)
         return applyColorToMultilineString(paddedCardAsString, getAnsiColor())
+    }
+
+    override fun toString(): String {
+        return cardAsString
     }
 
     private fun generateSquiggleString(): String {

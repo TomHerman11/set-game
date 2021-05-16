@@ -26,7 +26,8 @@ fun generateShuffledSetDeck(): MutableList<SetCard> {
 
 class SetGame {
     private val deck: MutableList<SetCard> = generateShuffledSetDeck()
-    private var faceUpCards: MutableSet<SetCard> = mutableSetOf()
+    private val faceUpCards: MutableList<SetCard> = mutableListOf()
+    private var setsFound: Int = 0
 
     init {
         initializeFaceUpCards()
@@ -36,35 +37,34 @@ class SetGame {
         printWelcomeMessage()
         while (faceUpCards.size >= NUMBER_OF_FACE_UP_CARDS) {
             printFaceUpCards()
-            printInstructions()
-            when (readLine()!!.toLowerCase()) {
+            when (val userInput = promptUserInput()) {
                 "draw" -> {
                     drawFromDeck()
                 }
-                "help" -> {
+                "find" -> {
                     val set = searchSetInFaceUpCards()
                     if (set != null) {
+                        println("The computer found the following Set:")
                         println(collectionOfCardsToString(set))
-                        faceUpCards.removeAll(set)
-                        drawFromDeck()
+                        handleSetFound(set)
                     } else {
                         println("Could not find a Set! Type \"draw\" or restart the game.")
                     }
                 }
                 else -> {
-                    // should print indices of cards in face up cards as numbers
-                    // parse and trim white spaces from user input
-                    // check the input is valid
-                    // check the input is a valid set or not and print a message accordingly.
+                    val indices = extractIndicesFromInput(userInput)
+                    if (indices.size == SET_SIZE) {
+                        val chosenCards = indices.map { faceUpCards[it - 1] }
+                        if (isLegalSet(chosenCards)) {
+                            println("You found a Set! Well done.")
+                            handleSetFound(chosenCards)
+                        } else {
+                            println("The following cards do not form a valid Set. Try again :)")
+                            println(collectionOfCardsToString(chosenCards))
+                        }
+                    }
                 }
             }
-
-
-//            if (deck.size >= SET_SIZE) {
-//                drawFromDeck(SET_SIZE)
-//            } else {
-//                break
-//            }
         }
     }
 
@@ -84,12 +84,38 @@ class SetGame {
         }
     }
 
+    /**
+     * If the input is valid, returns a list of indices in the range from 1 to faceUpCards.size
+     * If the input is not valid, returns a list with less than SET_SIZE elements.
+     */
+    private fun extractIndicesFromInput(input: String): List<Int> {
+        val rawCardsIndices = input.split("\\s+".toRegex())
+        if (rawCardsIndices.toSet().size != SET_SIZE) {
+            println("Wrong number of different indices! Please insert $SET_SIZE different indices exactly.")
+            return listOf()
+        }
+        val cardsIndices = mutableListOf<Int>()
+        for (rawIndex in rawCardsIndices) {
+            try {
+                val i = rawIndex.toInt()
+                if (i < 1 || i > faceUpCards.size) {
+                    println("'$rawIndex' is not a valid index. It is not in the range of 1...${faceUpCards.size}.")
+                    break
+                }
+                cardsIndices.add(i)
+            } catch (e: NumberFormatException) {
+                println("'$rawIndex' is not a valid index (not integer).")
+                break
+            }
+        }
+        return cardsIndices
+    }
+
     private fun searchSetInFaceUpCards(): List<SetCard>? {
-        val faceUpCardsList = faceUpCards.toList()
-        for (i in faceUpCardsList.indices) {
-            for (j in i + 1 until faceUpCardsList.size) {
-                val card1 = faceUpCardsList[i]
-                val card2 = faceUpCardsList[j]
+        for (i in faceUpCards.indices) {
+            for (j in i + 1 until faceUpCards.size) {
+                val card1 = faceUpCards[i]
+                val card2 = faceUpCards[j]
                 val card3 = SetCard(
                     deriveCompletingShape(card1, card2),
                     deriveCompletingColor(card1, card2),
@@ -141,46 +167,53 @@ class SetGame {
     }
 
     private fun printFaceUpCards() {
-        val l = faceUpCards.toList()
-        for (i in 0..l.size step SET_SIZE) {
-            println(collectionOfCardsToString(l.subList(i, kotlin.math.min(i + SET_SIZE, l.size))))
-//            println("(A B C)")
+        println("Board:")
+        for (i in 0 until faceUpCards.size step SET_SIZE) {
+            println(collectionOfCardsToString(faceUpCards.subList(i, i + SET_SIZE)))
+            for (j in i until i + SET_SIZE) {
+                val padding = " ".repeat((CARD_STRING_LINE_LENGTH + j.toString().length) / 2)
+                val extraPaddingBetweenCards = " ".repeat(3)
+                print("$padding${j + 1}$padding$extraPaddingBetweenCards")
+            }
+            println()
         }
+        println()
     }
 
     private fun printWelcomeMessage() {
-        println("Play Set! See instructions at: https://en.wikipedia.org/wiki/Set_(card_game)")
-    }
-
-    private fun printInstructions() {
         println(
             """
-            - To select a Set, insert the 3 characters matching your cards.
+            Play Set! See instructions at: https://en.wikipedia.org/wiki/Set_(card_game)
+            - To select a Set, type the 3 indices matching 3 cards of your choice, for example: "5 2 10".
             - To draw 3 more cards, type "draw".
-            - Want the computer to find a set? Type "help".
-            Your input:
+            - Want the computer to find a Set? Type "find".
             """.trimIndent()
         )
     }
 
-    fun isLegalSet(cards: List<SetCard>): Boolean {
-        if (cards.isEmpty()) return true
+    private fun promptUserInput(): String {
+        print("Your input: ")
+        return readLine()?.trim()?.toLowerCase() ?: ""
+    }
+
+    private fun isLegalSet(cards: List<SetCard>): Boolean {
         if (cards.size != SET_SIZE) return false
 
-        val legalDifferences = setOf(1, cards.size)
-        val shapes = setOf(cards.map { it.shape })
-        val colors = setOf(cards.map { it.color })
-        val numbers = setOf(cards.map { it.setNumber })
-        val shadings = setOf(cards.map { it.shading })
+        val legalDifferences = setOf(1, SET_SIZE)
+        val shapes = cards.map { it.shape }.toSet()
+        val colors = cards.map { it.color }.toSet()
+        val numbers = cards.map { it.setNumber }.toSet()
+        val shadings = cards.map { it.shading }.toSet()
 
         return legalDifferences.contains(shapes.size) &&
                 legalDifferences.contains(colors.size) &&
                 legalDifferences.contains(numbers.size) &&
                 legalDifferences.contains(shadings.size)
     }
-}
 
-fun main() {
-    val setGame = SetGame()
-    setGame.play()
+    private fun handleSetFound(set: List<SetCard>) {
+        faceUpCards.removeAll(set)
+        drawFromDeck()
+        setsFound += 1
+    }
 }
